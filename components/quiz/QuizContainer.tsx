@@ -52,7 +52,8 @@ export default function QuizContainer() {
 
   const selectGender = useCallback(async (gender: Gender) => {
     const age = state.age!;
-    const profile: Profile = `${gender}-${age}` as Profile;
+    const ageLabel = gender === "mulher" && age === "adulto" ? "adulta" : age;
+    const profile: Profile = `${gender}-${ageLabel}` as Profile;
     setLoading(true);
     const { data } = await supabase
       .from("themes")

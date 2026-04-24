@@ -10,6 +10,7 @@ interface Props {
 export default function MarketingClient({ settings }: Props) {
   const router = useRouter();
   const [pixelId, setPixelId] = useState(settings.pixel_id || "");
+  const [accessToken, setAccessToken] = useState(settings.meta_access_token || "");
   const [whatsapp, setWhatsapp] = useState(settings.whatsapp_number || "5582988782681");
   const [message, setMessage] = useState(
     settings.whatsapp_message ||
@@ -66,6 +67,42 @@ export default function MarketingClient({ settings }: Props) {
           {settings.pixel_id && (
             <p className="text-brand-muted text-xs mt-3">
               Pixel atual: <span className="text-brand-white font-mono">{settings.pixel_id}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Meta Conversions API */}
+        <div className="bg-brand-card border border-brand-border rounded-xl p-6">
+          <div className="mb-4">
+            <h2 className="text-brand-white font-bold">Meta Conversions API</h2>
+          </div>
+          <p className="text-brand-muted text-sm mb-4">
+            Token de acesso para eventos server-side (PageView e Lead). Gerado no Gerenciador de Eventos do Meta
+            → Configurações → API de Conversões → Gerar token de acesso.
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="password"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="EAAxxxxxxxxxxxxxxxx..."
+              className="flex-1 px-4 py-3 rounded-xl bg-brand-bg border border-brand-border text-brand-white placeholder-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-red font-mono text-sm"
+            />
+            <button
+              onClick={() => save("meta_access_token", accessToken, "Token")}
+              disabled={saving}
+              className="px-5 py-3 bg-brand-red hover:bg-[#c72522] text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+            >
+              Salvar
+            </button>
+          </div>
+          {settings.meta_access_token ? (
+            <p className="text-brand-muted text-xs mt-3">
+              Status: <span className="text-green-400 font-medium">● configurado</span>
+            </p>
+          ) : (
+            <p className="text-brand-muted text-xs mt-3">
+              Status: <span className="text-yellow-500 font-medium">● não configurado</span> — eventos server-side desativados
             </p>
           )}
         </div>
@@ -139,7 +176,7 @@ export default function MarketingClient({ settings }: Props) {
             Os dados são exibidos no Dashboard.
           </p>
           <p className="text-brand-muted text-sm mt-2">
-            Além disso, o evento <code className="text-brand-red">Lead</code> é disparado para o Meta Pixel no momento do clique.
+            O evento <code className="text-brand-red">Lead</code> é disparado para o Meta Pixel (browser) e para a Conversions API (server-side) com o mesmo <code className="text-brand-red">event_id</code> — o Meta deduplica automaticamente. O evento <code className="text-brand-red">PageView</code> também é enviado via Conversions API ao iniciar o quiz.
           </p>
         </div>
       </div>

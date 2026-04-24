@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProgressBar from "./ProgressBar";
 import OptionButton from "./OptionButton";
 import { supabase } from "@/lib/supabase";
 import { AgeGroup, Gender, Profile, Theme, Filter, Result } from "@/lib/types";
+import { trackPixelEvent } from "@/components/MetaPixel";
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -27,9 +28,22 @@ const PROFILE_QUESTION: Record<string, string> = {
   "mulher-jovem": "O que melhor descreve você agora?",
 };
 
-export default function QuizContainer() {
+export default function QuizContainer({ pageViewEventId }: { pageViewEventId: string }) {
   const router = useRouter();
   const [state, setState] = useState<QuizState>({ step: 1 });
+
+  useEffect(() => {
+    trackPixelEvent("PageView", {}, { eventID: pageViewEventId });
+    fetch("/api/meta-conversions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_name: "PageView",
+        event_id: pageViewEventId,
+        event_source_url: window.location.href,
+      }),
+    }).catch(() => {});
+  }, [pageViewEventId]);
   const [themes, setThemes] = useState<Theme[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [results, setResults] = useState<Result[]>([]);
@@ -46,7 +60,8 @@ export default function QuizContainer() {
     });
   };
 
-  const selectAge = useCallback(async (age: AgeGroup) => {
+  const selectAge = useCallback((age: AgeGroup) => {
+    trackPixelEvent("InitiateCheckout");
     setState({ step: 2, age });
   }, []);
 

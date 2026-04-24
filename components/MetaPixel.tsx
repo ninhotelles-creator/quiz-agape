@@ -37,10 +37,19 @@ export default function MetaPixel({ pixelId }: MetaPixelProps) {
   );
 }
 
-type FbqFn = (cmd: string, event: string, params?: Record<string, unknown>) => void;
+type FbqFn = (
+  cmd: string,
+  event: string,
+  params?: Record<string, unknown>,
+  options?: { eventID?: string }
+) => void;
 
-export function trackPixelEvent(eventName: string, params?: Record<string, unknown>) {
+export function trackPixelEvent(
+  eventName: string,
+  params?: Record<string, unknown>,
+  options?: { eventID?: string }
+) {
   if (typeof window !== "undefined" && (window as unknown as { fbq?: FbqFn }).fbq) {
-    (window as unknown as { fbq: FbqFn }).fbq("track", eventName, params);
+    (window as unknown as { fbq: FbqFn }).fbq("track", eventName, params, options);
   }
 }

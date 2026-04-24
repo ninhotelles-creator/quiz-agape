@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 async function getMetrics() {
   const supabase = createAdminClient();
 
-  const [totalResult, todayResult, topBooksResult, byProfileResult] = await Promise.all([
+  const [totalResult, todayResult, topBooksResult, byProfileResult, booksCountResult] = await Promise.all([
     supabase.from("click_events").select("id", { count: "exact", head: true }),
     supabase.from("click_events")
       .select("id", { count: "exact", head: true })
@@ -18,6 +18,7 @@ async function getMetrics() {
     supabase.from("click_events")
       .select("profile")
       .not("profile", "is", null),
+    supabase.from("books").select("id", { count: "exact", head: true }),
   ]);
 
   // Count top books
@@ -43,8 +44,9 @@ async function getMetrics() {
   }
 
   return {
-    total: totalResult.count || 0,
-    today: todayResult.count || 0,
+    total: totalResult.count ?? 0,
+    today: todayResult.count ?? 0,
+    booksTotal: booksCountResult.count ?? 0,
     topBooks,
     profileCounts,
   };
@@ -58,7 +60,7 @@ const PROFILE_LABELS: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  const { total, today, topBooks, profileCounts } = await getMetrics();
+  const { total, today, booksTotal, topBooks, profileCounts } = await getMetrics();
 
   return (
     <div>
@@ -68,7 +70,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         <MetricCard label="Cliques totais" value={total} />
         <MetricCard label="Hoje" value={today} />
-        <MetricCard label="Livros no catálogo" value="—" async />
+        <MetricCard label="Livros no catálogo" value={booksTotal} />
         <MetricCard label="Conversão estimada" value={total > 0 ? `${((today / total) * 100).toFixed(0)}%` : "—"} />
       </div>
 
@@ -135,7 +137,6 @@ function MetricCard({
 }: {
   label: string;
   value: number | string;
-  async?: boolean;
 }) {
   return (
     <div className="bg-brand-card border border-brand-border rounded-xl p-5">

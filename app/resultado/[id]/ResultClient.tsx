@@ -23,26 +23,26 @@ export default function ResultClient({ book, whatsappUrl }: ResultClientProps) {
     setThemeCode(sessionStorage.getItem("quiz_theme_code") || "");
   }, []);
 
-  const handleWhatsApp = async () => {
-    if (!tracked) {
-      setTracked(true);
-      trackPixelEvent("Lead", { content_name: book.title, content_category: "book_quiz" });
-
-      try {
-        await fetch("/api/track", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            book_id: book.id,
-            book_title: book.title,
-            author: book.author,
-            profile,
-            theme_code: themeCode,
-          }),
-        });
-      } catch {}
-    }
+  const handleWhatsApp = () => {
+    // Abre WhatsApp primeiro (contexto de gesto síncrono) para evitar popup blocker
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    if (tracked) return;
+    setTracked(true);
+    const leadEventId = crypto.randomUUID();
+    trackPixelEvent("Lead", { content_name: book.title, content_category: "book_quiz" }, { eventID: leadEventId });
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        book_id: book.id,
+        book_title: book.title,
+        author: book.author,
+        profile,
+        theme_code: themeCode,
+        event_id: leadEventId,
+        event_source_url: window.location.href,
+      }),
+    }).catch(() => {});
   };
 
   return (

@@ -33,6 +33,16 @@ function parseVendedores(raw: string | null): Vendedor[] {
   }
 }
 
+function sanitizePhone(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  // Número local (DDD + número, 10 ou 11 dígitos) sem código do país: adiciona 55
+  if ((digits.length === 10 || digits.length === 11) && !digits.startsWith("55")) {
+    return `55${digits}`;
+  }
+  return digits;
+}
+
 export default function MarketingClient({ settings }: Props) {
   const router = useRouter();
   const [pixelId, setPixelId] = useState(settings.pixel_id || "");
@@ -114,7 +124,7 @@ export default function MarketingClient({ settings }: Props) {
               onClick={() => save("pixel_id", pixelId, "Pixel ID")}
               disabled={saving}
               className="px-5 py-3 bg-brand-red hover:bg-[#c72522] text-white font-bold rounded-xl transition-colors disabled:opacity-50"
-            >
+          >
               Salvar
             </button>
           </div>
@@ -146,7 +156,7 @@ export default function MarketingClient({ settings }: Props) {
               onClick={() => save("meta_access_token", accessToken, "Token")}
               disabled={saving}
               className="px-5 py-3 bg-brand-red hover:bg-[#c72522] text-white font-bold rounded-xl transition-colors disabled:opacity-50"
-            >
+          >
               Salvar
             </button>
           </div>
@@ -243,6 +253,7 @@ export default function MarketingClient({ settings }: Props) {
                     <input
                       value={v.numero}
                       onChange={(e) => updateVendedor(i, "numero", e.target.value)}
+                      onBlur={(e) => updateVendedor(i, "numero", sanitizePhone(e.target.value))}
                       placeholder="5582988782681"
                       className="w-full px-4 py-3 rounded-xl bg-brand-bg border border-brand-border text-brand-white placeholder-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-red"
                     />

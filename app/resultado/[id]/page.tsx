@@ -22,26 +22,26 @@ export default async function ResultadoPage({ params, searchParams }: PageProps)
   const { data: settings } = await supabase
     .from("settings")
     .select("key, value")
-    .in("key", ["whatsapp_number", "whatsapp_message", "whatsapp_vendedores"]);
+    .in("key", ["whatsapp_number", "whatsapp_message"]);
 
   let whatsapp = settings?.find((s) => s.key === "whatsapp_number")?.value || "5582988782681";
   const message = settings?.find((s) => s.key === "whatsapp_message")?.value ||
     "Olá! Fiz o quiz da Livraria Ágape e recebi a indicação do livro: [NOME DO LIVRO] de [AUTOR]. Gostaria de saber mais!";
 
-  console.log("[DEBUG] searchParams.v =", JSON.stringify(searchParams.v));
-  console.log("[DEBUG] settings rows =", JSON.stringify(settings));
-
   if (searchParams.v) {
-    const vendedoresRaw = settings?.find((s) => s.key === "whatsapp_vendedores")?.value;
-    console.log("[DEBUG] vendedoresRaw =", JSON.stringify(vendedoresRaw));
+    const { data: vendedoresSetting } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "whatsapp_vendedores")
+      .maybeSingle();
     try {
-      const vendedores: { slug: string; numero: string }[] = vendedoresRaw ? JSON.parse(vendedoresRaw) : [];
-      console.log("[DEBUG] vendedores parsed =", JSON.stringify(vendedores));
+      const vendedores: { slug: string; numero: string }[] = vendedoresSetting?.value
+        ? JSON.parse(vendedoresSetting.value)
+        : [];
       const match = vendedores.find((v) => v.slug === searchParams.v);
-      console.log("[DEBUG] match =", JSON.stringify(match));
       if (match?.numero) whatsapp = match.numero;
-    } catch (e) {
-      console.log("[DEBUG] catch error =", String(e));
+    } catch {
+      // ignora JSON inválido e mantém o número padrão
     }
   }
 

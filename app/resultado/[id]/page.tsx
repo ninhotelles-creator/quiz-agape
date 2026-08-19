@@ -28,14 +28,20 @@ export default async function ResultadoPage({ params, searchParams }: PageProps)
   const message = settings?.find((s) => s.key === "whatsapp_message")?.value ||
     "Olá! Fiz o quiz da Livraria Ágape e recebi a indicação do livro: [NOME DO LIVRO] de [AUTOR]. Gostaria de saber mais!";
 
+  console.log("[DEBUG] searchParams.v =", JSON.stringify(searchParams.v));
+  console.log("[DEBUG] settings rows =", JSON.stringify(settings));
+
   if (searchParams.v) {
     const vendedoresRaw = settings?.find((s) => s.key === "whatsapp_vendedores")?.value;
+    console.log("[DEBUG] vendedoresRaw =", JSON.stringify(vendedoresRaw));
     try {
       const vendedores: { slug: string; numero: string }[] = vendedoresRaw ? JSON.parse(vendedoresRaw) : [];
+      console.log("[DEBUG] vendedores parsed =", JSON.stringify(vendedores));
       const match = vendedores.find((v) => v.slug === searchParams.v);
+      console.log("[DEBUG] match =", JSON.stringify(match));
       if (match?.numero) whatsapp = match.numero;
-    } catch {
-      // ignora JSON inválido e mantém o número padrão
+    } catch (e) {
+      console.log("[DEBUG] catch error =", String(e));
     }
   }
 

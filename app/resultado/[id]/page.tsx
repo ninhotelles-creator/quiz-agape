@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: { id: string };
+  searchParams: { v?: string };
 }
 
-export default async function ResultadoPage({ params }: PageProps) {
+export default async function ResultadoPage({ params, searchParams }: PageProps) {
   const supabase = createAdminClient();
   const { data: book } = await supabase
     .from("books")
@@ -21,11 +22,22 @@ export default async function ResultadoPage({ params }: PageProps) {
   const { data: settings } = await supabase
     .from("settings")
     .select("key, value")
-    .in("key", ["whatsapp_number", "whatsapp_message"]);
+    .in("key", ["whatsapp_number", "whatsapp_message", "whatsapp_vendedores"]);
 
-  const whatsapp = settings?.find((s) => s.key === "whatsapp_number")?.value || "5582988782681";
+  let whatsapp = settings?.find((s) => s.key === "whatsapp_number")?.value || "5582988782681";
   const message = settings?.find((s) => s.key === "whatsapp_message")?.value ||
     "Olá! Fiz o quiz da Livraria Ágape e recebi a indicação do livro: [NOME DO LIVRO] de [AUTOR]. Gostaria de saber mais!";
+
+  if (searchParams.v) {
+    const vendedoresRaw = settings?.find((s) => s.key === "whatsapp_vendedores")?.value;
+    try {
+      const vendedores: { slug: string; numero: string }[] = vendedoresRaw ? JSON.parse(vendedoresRaw) : [];
+      const match = vendedores.find((v) => v.slug === searchParams.v);
+      if (match?.numero) whatsapp = match.numero;
+    } catch {
+      // ignora JSON inválido e mantém o número padrão
+    }
+  }
 
   const finalMessage = message
     .replace("[NOME DO LIVRO]", book.title)

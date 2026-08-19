@@ -28,11 +28,18 @@ const PROFILE_QUESTION: Record<string, string> = {
   "mulher-jovem": "O que melhor descreve você agora?",
 };
 
-export default function QuizContainer({ pageViewEventId }: { pageViewEventId: string }) {
+export default function QuizContainer({
+  pageViewEventId,
+  vendedor,
+}: {
+  pageViewEventId: string;
+  vendedor?: string;
+}) {
   const router = useRouter();
   const [state, setState] = useState<QuizState>({ step: 1 });
 
   useEffect(() => {
+    if (vendedor) sessionStorage.setItem("quiz_vendedor", vendedor);
     trackPixelEvent("PageView", {}, { eventID: pageViewEventId });
     fetch("/api/meta-conversions", {
       method: "POST",
@@ -43,7 +50,7 @@ export default function QuizContainer({ pageViewEventId }: { pageViewEventId: st
         event_source_url: window.location.href,
       }),
     }).catch(() => {});
-  }, [pageViewEventId]);
+  }, [pageViewEventId, vendedor]);
   const [themes, setThemes] = useState<Theme[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [results, setResults] = useState<Result[]>([]);
@@ -115,8 +122,9 @@ export default function QuizContainer({ pageViewEventId }: { pageViewEventId: st
     sessionStorage.setItem("quiz_theme_code", state.themeCode || "");
     sessionStorage.setItem("quiz_verse", theme?.verse || "");
     sessionStorage.setItem("quiz_verse_ref", theme?.verse_reference || "");
-    router.push(`/carregando?book=${result.book_id}&theme=${state.themeCode}`);
-  }, [router, state, themes]);
+    const vendorParam = vendedor ? `&v=${encodeURIComponent(vendedor)}` : "";
+    router.push(`/carregando?book=${result.book_id}&theme=${state.themeCode}${vendorParam}`);
+  }, [router, state, themes, vendedor]);
 
   const currentTheme = themes.find((t) => t.id === state.themeId);
   const currentFilter = filters.find((f) => f.id === state.filterId);

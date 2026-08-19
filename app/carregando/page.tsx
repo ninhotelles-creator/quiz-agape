@@ -9,6 +9,7 @@ function LoadingContent() {
   const router = useRouter();
   const params = useSearchParams();
   const bookId = params.get("book");
+  const vendedor = params.get("v");
   const [verse, setVerse] = useState("");
   const [verseRef, setVerseRef] = useState("");
   const [progress, setProgress] = useState(0);
@@ -32,13 +33,14 @@ function LoadingContent() {
       if (pct >= 100) {
         clearInterval(interval);
         setTimeout(() => {
-          router.push(`/resultado/${bookId}`);
+          const vendorParam = vendedor ? `?v=${encodeURIComponent(vendedor)}` : "";
+          router.push(`/resultado/${bookId}${vendorParam}`);
         }, 300);
       }
     }, 50);
 
     return () => clearInterval(interval);
-  }, [router, bookId]);
+  }, [router, bookId, vendedor]);
 
   return (
     <div className="min-h-dvh bg-brand-bg flex flex-col items-center justify-center px-6">

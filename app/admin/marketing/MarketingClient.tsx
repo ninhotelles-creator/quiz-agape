@@ -7,6 +7,32 @@ interface Props {
   settings: Record<string, string | null>;
 }
 
+interface Vendedor {
+  slug: string;
+  nome: string;
+  numero: string;
+}
+
+const DIACRITICS_REGEX = new RegExp("[\\u0300-\\u036f]", "g");
+
+function slugify(nome: string) {
+  return nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(DIACRITICS_REGEX, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function parseVendedores(raw: string | null): Vendedor[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
 export default function MarketingClient({ settings }: Props) {
   const router = useRouter();
   const [pixelId, setPixelId] = useState(settings.pixel_id || "");
@@ -16,8 +42,14 @@ export default function MarketingClient({ settings }: Props) {
     settings.whatsapp_message ||
     "Olá! Fiz o quiz da Livraria Ágape e recebi a indicação do livro: [NOME DO LIVRO] de [AUTOR]. Gostaria de saber mais!"
   );
+  const [vendedores, setVendedores] = useState<Vendedor[]>(() => {
+    const existentes = parseVendedores(settings.whatsapp_vendedores);
+    while (existentes.length < 2) existentes.push({ slug: "", nome: "", numero: "" });
+    return existentes;
+  });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [copiedSlug, setCopiedSlug] = useState("");
 
   const save = async (key: string, value: string, label: string) => {
     setSaving(true);
@@ -34,6 +66,28 @@ export default function MarketingClient({ settings }: Props) {
       setMsg("Erro ao salvar.");
     }
     setSaving(false);
+  };
+
+  const updateVendedor = (index: number, field: "nome" | "numero", value: string) => {
+    setVendedores((prev) => {
+      const next = [...prev];
+      const item = { ...next[index], [field]: value };
+      if (field === "nome") item.slug = slugify(value);
+      next[index] = item;
+      return next;
+    });
+  };
+
+  const saveVendedores = () => {
+    const validos = vendedores.filter((v) => v.nome && v.numero);
+    save("whatsapp_vendedores", JSON.stringify(validos), "Funcionários");
+  };
+
+  const copyLink = (slug: string) => {
+    const url = `${window.location.origin}/?v=${encodeURIComponent(slug)}`;
+    navigator.clipboard.writeText(url);
+    setCopiedSlug(slug);
+    setTimeout(() => setCopiedSlug(""), 2000);
   };
 
   return (
@@ -156,6 +210,67 @@ export default function MarketingClient({ settings }: Props) {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Vendedores */}
+        <div className="bg-brand-card border border-brand-border rounded-xl p-6">
+          <div className="mb-4">
+            <h2 className="text-brand-white font-bold">Links por funcionário</h2>
+            <p className="text-brand-muted text-sm mt-1">
+              Cadastre o WhatsApp de cada funcionário e compartilhe o link gerado. Quem responder o quiz por esse link
+              cai no WhatsApp dele ao clicar no botão final.
+            </p>
+          </div>
+          <div className="space-y-5">
+            {vendedores.map((v, i) => (
+              <div key={i} className="border border-brand-border rounded-xl p-4 space-y-3">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="text-brand-muted text-xs uppercase tracking-widest font-semibold block mb-2">
+                      Nome do funcionário
+                    </label>
+                    <input
+                      value={v.nome}
+                      onChange={(e) => updateVendedor(i, "nome", e.target.value)}
+                      placeholder={`Ex: Funcionário ${i + 1}`}
+                      className="w-full px-4 py-3 rounded-xl bg-brand-bg border border-brand-border text-brand-white placeholder-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-red"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-brand-muted text-xs uppercase tracking-widest font-semibold block mb-2">
+                      WhatsApp (com código do país, sem +)
+                    </label>
+                    <input
+                      value={v.numero}
+                      onChange={(e) => updateVendedor(i, "numero", e.target.value)}
+                      placeholder="5582988782681"
+                      className="w-full px-4 py-3 rounded-xl bg-brand-bg border border-brand-border text-brand-white placeholder-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-red"
+                    />
+                  </div>
+                </div>
+                {v.slug && v.numero && (
+                  <div className="flex items-center gap-3">
+                    <code className="flex-1 text-brand-muted text-xs bg-brand-bg border border-brand-border rounded-lg px-3 py-2 truncate">
+                      {typeof window !== "undefined" ? window.location.origin : ""}/?v={v.slug}
+                    </code>
+                    <button
+                      onClick={() => copyLink(v.slug)}
+                      className="px-4 py-2 bg-brand-bg border border-brand-border hover:border-brand-red text-brand-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {copiedSlug === v.slug ? "Copiado!" : "Copiar link"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={saveVendedores}
+            disabled={saving}
+            className="mt-4 px-5 py-3 bg-brand-red hover:bg-[#c72522] text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+          >
+            Salvar funcionários
+          </button>
         </div>
 
         {msg && (

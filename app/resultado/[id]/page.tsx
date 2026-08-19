@@ -43,7 +43,8 @@ export default async function ResultadoPage({ params, searchParams }: PageProps)
     .replace("[NOME DO LIVRO]", book.title)
     .replace("[AUTOR]", book.author);
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(finalMessage)}`;
+  const whatsappDigits = whatsapp.replace(/\D/g, "");
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappDigits}&text=${encodeURIComponent(finalMessage)}`;
 
   return (
     <ResultClient
